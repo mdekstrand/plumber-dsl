@@ -1,0 +1,17 @@
+#!/usr/bin/env tclsh
+set root [file dirname [info script]]
+set auto_path [list $root {*}$auto_path]
+
+package require plumber
+package require cmdline
+
+set options {
+    {v             "increase logging verbosity"}
+}
+
+array set params [cmdline::getoptions argv $options "\[options]"]
+if {$params(v)} {
+    logging::configure -verbose
+}
+
+render_pipeline pipeline.tcl
