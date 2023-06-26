@@ -7,7 +7,7 @@ namespace eval plumber::dsl::stage {
     variable deps
     variable outs
 
-    namespace export cmd wdir dep out root_relpath
+    namespace export cmd wdir dep out root_relpath work_dir
 
     proc _append {key obj} {
         variable stage
@@ -52,6 +52,17 @@ namespace eval plumber::dsl::stage {
         return [file join $path]
     }
 
+    # Get working dir relative to the root
+    proc work_dir {} {
+        variable stage
+        set pfx $::plumber::stage_prefix
+        if {"wdir" in [huddle keys $stage]} {
+            return [::plumber::rel_path [file join $pfx [huddle get_stripped $stage wdir]]]
+        } else {
+            return [::plumber::rel_path $pfx]
+        }
+    }
+
     proc cmd {args} {
         variable stage
         set cmd [concat {*}$args]
@@ -60,6 +71,10 @@ namespace eval plumber::dsl::stage {
 
     proc wdir {dir} {
         variable stage
+        variable name
+        if {![lempty [huddle keys $stage]]} {
+            msg -warn "$name: wdir should be the first command in a stage"
+        }
         huddle set stage wdir $dir
     }
 
