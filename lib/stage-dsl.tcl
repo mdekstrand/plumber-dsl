@@ -4,8 +4,10 @@ package require huddle;
 namespace eval plumber::dsl::stage {
     variable name
     variable stage
+    variable deps
+    variable outs
 
-    namespace export cmd dep out
+    namespace export cmd wdir dep out
 
     proc _append {key obj} {
         variable stage
@@ -18,23 +20,41 @@ namespace eval plumber::dsl::stage {
         huddle set stage $key $list
     }
 
+    proc _root_path {path} {
+        variable stage
+        set wdir ""
+        if {"wdir" in [huddle keys $stage]} {
+            set wdir [huddle get_stripped $stage wdir]
+        }
+        set path [file join $::plumber::stage_prefix $wdir $path]
+        return [::plumber::rel_path $path]
+    }
+
     proc cmd {args} {
         variable stage
         set cmd [concat {*}$args]
         huddle set stage cmd [huddle string $cmd]
     }
 
+    proc wdir {dir} {
+        variable stage
+        huddle set stage wdir $dir
+    }
+
     proc dep {args} {
         variable name
         variable stage
+        variable deps
         foreach arg $args {
             _append deps [huddle string $arg]
+            lappend deps [_root_path $arg]
         }
     }
 
     proc out {args} {
         variable name
         variable stage
+        variable outs
         set cache 1
         set mode outs
         foreach arg $args {
@@ -53,6 +73,7 @@ namespace eval plumber::dsl::stage {
                         set out [huddle create $arg $cobj]
                     }
                     _append $mode $out
+                    lappend outs [_root_path $arg]
                 }
             }
         }
