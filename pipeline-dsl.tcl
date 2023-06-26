@@ -33,7 +33,14 @@ namespace eval plumber::dsl {
         set ::plumber::dsl::stage::stage [huddle create]
         msg -debug "configuring stage $name"
         namespace eval ::plumber::dsl::stage $body
-        huddle set stages $name $::plumber::dsl::stage::stage
+        set stage $::plumber::dsl::stage::stage
+        if {[info exists items]} {
+            set stage [huddle create \
+                foreach [huddle compile list $items] \
+                do $stage
+            ]
+        }
+        huddle set stages $name $stage
         msg -trace "stage: $::plumber::dsl::stage::stage"
     }
 }
