@@ -7,7 +7,7 @@ namespace eval plumber::dsl::stage {
     variable deps
     variable outs
 
-    namespace export cmd wdir dep out
+    namespace export cmd wdir dep out root_relpath
 
     proc _append {key obj} {
         variable stage
@@ -28,6 +28,28 @@ namespace eval plumber::dsl::stage {
         }
         set path [file join $::plumber::stage_prefix $wdir $path]
         return [::plumber::rel_path $path]
+    }
+
+    # Get a relative path to the root
+    proc root_relpath {} {
+        variable stage
+        set path [list]
+        set wdir ""
+        if {"wdir" in [huddle keys $stage]} {
+            set wdir [huddle get_stripped $stage wdir]
+        }
+        set parts [list]
+        foreach p [file split $::plumber::stage_prefix] {
+            lappend path ".."
+        }
+        foreach p [file split $wdir] {
+            if {$p eq ".." && [lindex $path 0] eq ".."} {
+                lshift path
+            } else {
+                error "cannot resolve path $::plumber::stage_prefix$wdir"
+            }
+        }
+        return [file join $path]
     }
 
     proc cmd {args} {
